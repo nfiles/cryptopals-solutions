@@ -1,6 +1,10 @@
 (*
-    base 64 decoding
-    1. encode/decode
+    Hex
+    1. encode
+    2. decode
+    Base 64
+    1. encode
+    2. decode 
 *)
 
 namespace Encoding
@@ -82,23 +86,16 @@ module Base64 =
 
             match padChunk bytes with
                 | [|a;b;c|] ->
-                    // printfn "sextet chunks: %s" <| Test.stringifyBits [
-                    //     a >>> 2
-                    //     a &&& 0b11uy <<< 4
-                    //     b >>> 4
-                    //     b &&& 0b1111uy <<< 2
-                    //     c >>> 6
-                    //     c &&& 0b111111uy
-                    // ]
                     [|
                         a >>> 2
                         ((a &&& 0b11uy) <<< 4) + (b >>> 4)
                         ((b &&& 0b1111uy) <<< 2) + (c >>> 6)
                         c &&& 0b111111uy
-                    |] //|> (fun x -> printfn "sextets: %s" <| Test.stringifyBits x; x)
+                    |]
                 | _ -> failwith "Must have between one and three bytes"
                 |> Seq.take (Array.length bytes + 1)
                 |> Seq.map (fun i -> HASH.[int i])
+                |> padSequenceRight '=' 4
 
         bytes
             |> Seq.chunkBySize 3
@@ -106,33 +103,18 @@ module Base64 =
 
     let decode (chars:char seq) =
         let getByteOrDefault c = if LOOKUP.ContainsKey c then LOOKUP.[c] else 0b0uy
-        let padChunk =
-            padSequenceRight '=' 4
-            >> Seq.map getByteOrDefault
-            >> Seq.toArray
+        let padChunk = padSequenceRight '=' 4 >> Seq.map getByteOrDefault >> Seq.toArray
 
         let decodeChunk chars =
-            let length = if Array.length chars > 3 then 3 else Array.length chars
-            // printfn "chunks: %A" <| chars
-            // printfn "padded chunk: %A" <| padChunk chars
             match padChunk chars with
                 | [|a;b;c;d|] ->
-                    // printfn "sextets: %s" <| Test.stringifyBits [a;b;c;d]
-                    // printfn "byte pieces: %s" <| Test.stringifyBits [
-                    //     a <<< 2
-                    //     (b &&& 0b110000uy) >>> 4
-                    //     b <<< 4
-                    //     c >>> 2
-                    //     c <<< 6
-                    //     d
-                    // ]
                     [|
                         (a <<< 2) + ((b &&& 0b110000uy) >>> 4)
                         (b <<< 4) + (c >>> 2)
                         (c <<< 6) + d
                     |]
                 | _ -> failwith "Must have between one and four characters"
-                |> Seq.take length
+                |> Seq.take (Array.length chars * 6 / 8)
 
         chars
             |> Seq.chunkBySize 4
