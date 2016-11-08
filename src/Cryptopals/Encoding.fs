@@ -9,19 +9,6 @@
 
 namespace Encoding
 
-module Test =
-    let seqToString = Seq.map string >> String.concat ""
-    let stringifyBits (bytes:byte seq) =
-        let getBit b = if b > byte 0 then '1' else '0'
-        let getBits b =
-            [0..7]
-            |> Seq.map (fun i -> (b >>> i) &&& 0b1uy)
-            |> Seq.map getBit
-            |> Seq.rev
-        bytes
-            |> Seq.map (getBits >> seqToString)
-            |> String.concat " "
-
 
 module Hex =
     open System
