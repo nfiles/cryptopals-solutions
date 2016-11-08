@@ -1,11 +1,11 @@
 namespace Cryptopals.Tests
 
-module Set01Tests =
-    open Xunit
-    open System
-    open Encoding
-    open Cryptopals
+open Xunit
+open System
+open System.Collections.Generic
+open Cryptopals
 
+module Set01Tests =
     let private hexToBase64String = seq >> Hex.decode >> Base64.encode >> TestHelpers.seqToString
 
     [<Fact>]
@@ -16,11 +16,6 @@ module Set01Tests =
         let actual = hexToBase64String input
         Assert.Equal(expected, actual, StringComparer.OrdinalIgnoreCase)
 
-    let private xorAgainst seqA seqB =
-        Comparison.xorStreams
-            <| seq seqA
-            <| seq seqB
-
     [<Fact>]
     let FixedXor() =
         let input = "1c0111001f010100061a024b53535009181c"
@@ -28,8 +23,31 @@ module Set01Tests =
         let expected = "746865206b696420646f6e277420706c6179"
 
         let actual =
-            xorAgainst (Hex.decode input) (Hex.decode xorTarget)
+            Comparison.xorStreams (Hex.decode input) (Hex.decode xorTarget)
                 |> Hex.encode
                 |> TestHelpers.seqToString
 
         Assert.Equal(expected, actual, StringComparer.OrdinalIgnoreCase)
+
+module ComparisonTests =
+    let characterFrequencyData: Object [] list =
+        [
+            [|
+                "hello"
+                [('H',0.2);('E',0.2);('L',0.4);('O',0.2)] |> dict
+            |]
+            [|
+                "tenletters"
+                [('T',0.3);('E',0.3);('N',0.1);('L',0.1);('S',0.1);('R',0.1)] |> dict
+            |]
+        ]
+
+    [<Theory>]
+    [<MemberData "characterFrequencyData">]
+    let CharacterFrequency(input, expected:IDictionary<char,double>) =
+        let getKey (i:KeyValuePair<_,_>) = i.Key
+        let sortDictionary = seq >> Seq.sortBy (getKey >> Char.ToUpper)
+        let actual = Comparison.characterFrequencyInStream input
+
+        Seq.zip (sortDictionary expected) (sortDictionary actual)
+            |> Seq.iter (fun (a,b) -> Assert.Equal(a,b))
