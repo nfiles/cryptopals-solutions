@@ -4,7 +4,8 @@
         "compilerName": "fsc",
         "compile": {
             "includeFiles": [
-                "Encoding.fs"
+                "Encoding.fs",
+                "Comparison.fs"
             ]
         }
     },
