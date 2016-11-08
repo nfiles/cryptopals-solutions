@@ -7,8 +7,7 @@
     2. decode 
 *)
 
-namespace Encoding
-
+namespace Cryptopals
 
 module Hex =
     open System
