@@ -18,6 +18,7 @@
         }
     },
     "buildOptions": {
+        "debugType": "portable",
         "compilerName": "fsc",
         "compile": {
             "includeFiles": [
