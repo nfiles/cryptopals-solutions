@@ -1,0 +1,3 @@
+namespace Cryptopals
+
+module Cipher =
