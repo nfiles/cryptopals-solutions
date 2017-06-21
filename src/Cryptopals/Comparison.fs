@@ -3,30 +3,12 @@ namespace Cryptopals
 module Comparison =
     open System
 
-    let private padSequence pad length source =
-        [source; Seq.initInfinite (fun _ -> pad)] |> Seq.take length
-
-    let private charToByte (c:char) = Text.Encoding.UTF8.GetBytes(string c) |> Seq.exactlyOne
-    let private byteToChar (b:byte) = Text.Encoding.UTF8.GetChars([|b|]) |> Seq.exactlyOne
-
     let xorStreams streamA streamB =
         let xorBytePair (a:byte, b:byte) = a ^^^ b
         Seq.zip streamA streamB |> Seq.map xorBytePair
 
     let xorStreamWithSingleByte b = Seq.initInfinite (fun _ -> b) |> xorStreams
 
-    let characterFrequenciesInStream stream =
-        let frequency all occurrences = float (Seq.length occurrences) / float (Seq.length all)
-        let countOccurrences (key, occurrences) = (key, frequency stream occurrences)
-        stream |> Seq.groupBy Char.ToUpper |> Seq.map countOccurrences
-
-    let alphanumericCharacters =
-        [['a'..'z'];['A'..'Z'];['0'..'9']] |> Seq.concat |> set
-    let acceptedCharacters =
-        [
-            seq alphanumericCharacters
-            seq " ,'\"@.?!"
-        ] |> Seq.concat |> set
     let predictedFrequencies =
         // English character frequency taken from Algoritmy.net
         // ref: http://en.algoritmy.net/article/40379/Letter-frequency-English
@@ -61,57 +43,51 @@ module Comparison =
         ]
 
     let predictedFrequenciesLookup = predictedFrequencies |> dict
-    // let isExpectedChar = Char.ToUpper >> predictedFrequenciesLookup.ContainsKey
+    
+    /// Characters that should be ignored when calculating frequency score
+    let validPunctuation = " ,'\"@.?!"
 
-    let scoreCharacterFrequency (stream:char seq) =
-        let calculateFrequencyDifference (c,f) =
-            Math.Pow(f - predictedFrequenciesLookup.[c] |> abs, 2.0)
+    let scoreByCharacterFrequency (stream:char seq) =
+        // ignore all valid punctuation. We don't have scores for these
+        let filteredStream =
+            Seq.filter
+                <| (fun ch ->
+                    Seq.contains ch validPunctuation |> not
+                )
+                <| stream
 
-        let validChars =
-            stream
-            |> Seq.map Char.ToUpper
-            |> Seq.filter predictedFrequenciesLookup.ContainsKey
-            |> List.ofSeq
+        let getExpectedFreq c =
+            if predictedFrequenciesLookup.ContainsKey(c)
+            then predictedFrequenciesLookup.[c]
+            else float 0
 
-        let validCharScore =
-            stream
-            |> Seq.map (fun c ->
-                if alphanumericCharacters.Contains(c) then 2
-                else if acceptedCharacters.Contains(c) then 1
-                else 0
+        let totalNumChars = filteredStream |> Seq.length
+
+        /// find the number of occurences of each character
+        let getFrequencyScore =
+            // count (case-insensitive) the occurrences of each character
+            Seq.countBy Char.ToUpper
+            // find the total variance of the set
+            >> Seq.sumBy (fun (ch, count) ->
+                let expected = getExpectedFreq ch
+                let actual = float count / float totalNumChars
+                // square the difference between expected and actual
+                Math.Pow(expected - actual, 2.0)
             )
-            |> Seq.sum
+            // divide total variance by size of the set
+            >> fun f -> f / (float totalNumChars)
 
-        let frequencyScore =
-            validChars
-            |> characterFrequenciesInStream
-            |> Seq.map calculateFrequencyDifference
-            |> Seq.sum
-
-        frequencyScore * float validCharScore // (List.length validChars |> float)
+        filteredStream |> getFrequencyScore
 
     let findBestXorByFrequency (options:byte seq) (source:byte seq) =
+        /// Calculates the XOR of the stream and gets the frequency "score"
         let xorAndScore (b:byte) =
             xorStreamWithSingleByte b
             >> Seq.map char
-            >> scoreCharacterFrequency
+            >> scoreByCharacterFrequency
 
-        let x =
-            options
+        options
             |> Seq.map (fun b -> (b, xorAndScore b source))
             |> Seq.sortBy (fun (b,f) -> f)
-
-        Seq.iter
-            <| fun (b,f) ->
-                printfn "score: %f char: %s option: %s"
-                    <| f
-                    <| (b |> byteToChar |> string)
-                    <| (xorStreamWithSingleByte b source
-                        |> Seq.map (byteToChar >> string)
-                        |> String.concat ""
-                    )
-            <| x
-
-        x
             |> Seq.head
-            |> fun (b,f) -> (byteToChar b)
+            |> fun (b,f) -> b

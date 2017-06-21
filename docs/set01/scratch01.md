@@ -21,6 +21,6 @@ ABCDE FGHIJ KLMNO PQRST UVWXY Zabcd efghi jklmn opqrs tuvwx yz012 34567 89+/
 
 ## Challenge 3 Solve single-byte cipher
 
-scoring? does this work?
+Calculate variance from expected frequencies
 
-`number of valid characters * (1 - frequency distance)`
+`Sum for each character in output => (expected frequency - actual frequency) ** 2 / length`
