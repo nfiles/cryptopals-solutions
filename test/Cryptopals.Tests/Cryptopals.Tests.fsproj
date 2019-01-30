@@ -10,7 +10,9 @@
   <ItemGroup>
     <Compile Include="TestHelpers.fs" />
     <Compile Include="Set01.fs" />
-    <Compile Include="Program.fs" />
+    <Content Include="data/**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.9.0" />
