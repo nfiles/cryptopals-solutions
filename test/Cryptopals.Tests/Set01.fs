@@ -12,10 +12,10 @@ module Set01Tests =
     let hexToBase64String = Hex.decode >> Base64.encode >> String.Concat
 
     /// create a character frequency map from the sample text
-    let corpus = 
+    let corpus =
         File.ReadAllText "./data/aliceinwonderland.txt"
         |> Comparison.buildCorpus
- 
+
     let private possibleKeys = seq { (byte 0)..(byte 255) }
 
     [<Fact>]
@@ -33,7 +33,7 @@ module Set01Tests =
         let expected = "746865206b696420646f6e277420706c6179"
 
         let actual =
-            Comparison.xorStreams
+            Ciphers.xorStreams
                 <| Hex.decode input
                 <| Hex.decode xorTarget
             |> Hex.encode
@@ -46,10 +46,10 @@ module Set01Tests =
         let input = Hex.decode "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736"
         let expected = "Cooking MC's like a pound of bacon"
 
-        let actualKey = Comparison.findBestXorByFrequency corpus possibleKeys input
+        let actualKey = Comparison.findBestXorByFrequency corpus possibleKeys input |> fst
 
         let cleartext =
-            Comparison.xorStreamWithSingleByte
+            Ciphers.xorStreamWithSingleByte
                 <| actualKey
                 <| input
             |> Seq.map char
@@ -66,21 +66,35 @@ module Set01Tests =
         let expected = "Now that the party is jumping\n"
 
         // read all the data and calculate a score for each row
-        let actual =
+        let _, actual =
             input
-            |> Seq.collect (fun raw ->
-                possibleKeys |> Seq.map (fun key -> (key, raw))
-            )
-            |> Seq.map (fun (key, raw) ->
-                let clear = 
-                    Comparison.xorStreamWithSingleByte key raw
+            |> Seq.map (fun raw ->
+                let key, score = Comparison.findBestXorByFrequency corpus possibleKeys raw
+                let clear =
+                    Ciphers.xorStreamWithSingleByte key raw
                     |> Seq.map char
                     |> String.Concat
-                let score = Comparison.scoreByCharacterFrequency corpus clear
-                (score, raw, clear)
+                (score, clear)
             )
-            |> Seq.sortByDescending (fun (score, _, _) -> score)
+            |> Seq.sortByDescending (fun (score, _) -> score)
             |> Seq.head
-            |> fun (_, _, clear) -> clear
 
         Assert.Equal(expected, actual)
+
+    [<Fact>]
+    let Challenge05RepeatingKeyXOR() =
+        let input = "Burning 'em, if you ain't quick and nimble
+I go crazy when I hear a cymbal"
+        let key = "ICE"
+        let expected =
+            "0b3637272a2b2e63622c2e69692a23693a2a3c6324202d623d63343c2a26226324272765272\
+a282b2f20430a652e2c652a3124333a653e2b2027630c692b20283165286326302e27282f"
+
+        let actual =
+            Ciphers.xorStreamWithRepeatingKey
+                <| Encoding.ASCII.GetBytes key
+                <| Encoding.ASCII.GetBytes input
+            |> Hex.encode
+            |> String.Concat
+
+        Assert.Equal(expected, actual, StringComparer.OrdinalIgnoreCase)
