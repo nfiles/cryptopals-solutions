@@ -37,3 +37,15 @@ module Comparison =
             |> Seq.map (fun key -> (key, xorAndScore key source))
             |> Seq.sortByDescending (fun (_, score) -> score)
             |> Seq.head
+
+    let getHammingDistance (stream1: seq<byte>) (stream2: seq<byte>) =
+        let getBit b pos =
+            (b >>> pos) &&& 0b00000001uy
+            |> (=) (byte 1)
+        let getBits b = seq { 0..7 } |> Seq.map (getBit b)
+
+        Seq.zip
+            <| Seq.collect getBits stream1
+            <| Seq.collect getBits stream2
+        |> Seq.filter (fun (a, b) -> a <> b)
+        |> Seq.length

@@ -98,3 +98,13 @@ a282b2f20430a652e2c652a3124333a653e2b2027630c692b20283165286326302e27282f"
             |> String.Concat
 
         Assert.Equal(expected, actual, StringComparer.OrdinalIgnoreCase)
+
+    [<Fact>]
+    let Challenge06HammingDistance() =
+        let a = "this is a test" |> Encoding.ASCII.GetBytes
+        let b = "wokka wokka!!!" |> Encoding.ASCII.GetBytes
+        let expected = 37
+
+        let actual = Comparison.getHammingDistance a b
+
+        Assert.Equal(expected, actual)
