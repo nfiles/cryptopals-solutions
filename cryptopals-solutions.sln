@@ -11,6 +11,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{B63318DE-9
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Cryptopals.Tests", "test\Cryptopals.Tests\Cryptopals.Tests.fsproj", "{31205DFF-DE04-4D65-8974-6E5795357699}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Cryptopals.Playground", "test\Cryptopals.Playground\Cryptopals.Playground.fsproj", "{C4A56D60-A85D-436D-B7ED-298D94D86540}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -48,9 +50,22 @@ Global
 		{31205DFF-DE04-4D65-8974-6E5795357699}.Release|x64.Build.0 = Release|Any CPU
 		{31205DFF-DE04-4D65-8974-6E5795357699}.Release|x86.ActiveCfg = Release|Any CPU
 		{31205DFF-DE04-4D65-8974-6E5795357699}.Release|x86.Build.0 = Release|Any CPU
+		{C4A56D60-A85D-436D-B7ED-298D94D86540}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C4A56D60-A85D-436D-B7ED-298D94D86540}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C4A56D60-A85D-436D-B7ED-298D94D86540}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{C4A56D60-A85D-436D-B7ED-298D94D86540}.Debug|x64.Build.0 = Debug|Any CPU
+		{C4A56D60-A85D-436D-B7ED-298D94D86540}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{C4A56D60-A85D-436D-B7ED-298D94D86540}.Debug|x86.Build.0 = Debug|Any CPU
+		{C4A56D60-A85D-436D-B7ED-298D94D86540}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C4A56D60-A85D-436D-B7ED-298D94D86540}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C4A56D60-A85D-436D-B7ED-298D94D86540}.Release|x64.ActiveCfg = Release|Any CPU
+		{C4A56D60-A85D-436D-B7ED-298D94D86540}.Release|x64.Build.0 = Release|Any CPU
+		{C4A56D60-A85D-436D-B7ED-298D94D86540}.Release|x86.ActiveCfg = Release|Any CPU
+		{C4A56D60-A85D-436D-B7ED-298D94D86540}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{D0DF0CA2-ACA0-409A-ABB9-DADFB09CEAB2} = {44F3C315-794D-4E3F-8022-15CF92EBC83B}
 		{31205DFF-DE04-4D65-8974-6E5795357699} = {B63318DE-9991-4E75-8077-A53C57B0435D}
+		{C4A56D60-A85D-436D-B7ED-298D94D86540} = {B63318DE-9991-4E75-8077-A53C57B0435D}
 	EndGlobalSection
 EndGlobal
