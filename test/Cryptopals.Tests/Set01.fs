@@ -108,3 +108,18 @@ a282b2f20430a652e2c652a3124333a653e2b2027630c692b20283165286326302e27282f"
         let actual = Comparison.getHammingDistance a b
 
         Assert.Equal(expected, actual)
+
+    [<Fact>]
+    let Challenge06BreakRepeatingKeyXOR() =
+        let input =
+            File.ReadAllText "./data/set01/6.txt"
+            |> Base64.decode
+            |> Seq.toArray
+        let key =
+            Comparison.findBestRepeatingXorKey
+                <| corpus
+                <| input
+            |> Encoding.ASCII.GetString
+        
+        printfn "key: %s" key
+        ()
