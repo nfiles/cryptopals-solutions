@@ -115,9 +115,11 @@ a282b2f20430a652e2c652a3124333a653e2b2027630c692b20283165286326302e27282f"
             File.ReadAllText "./data/set01/6.txt"
             |> Base64.decode
             |> Seq.toArray
+        let keyLength = Comparison.findRepeatingXorKeyLength input
         let key =
             Comparison.findBestRepeatingXorKey
                 <| corpus
+                <| keyLength
                 <| input
             |> Encoding.ASCII.GetString
         
