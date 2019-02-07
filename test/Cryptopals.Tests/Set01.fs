@@ -7,13 +7,14 @@ open System.Text
 open Cryptopals
 open Xunit
 open Xunit.Abstractions
+open FSharp.Reflection
 
 module Set01Tests =
     let hexToBase64String = Hex.decode >> Base64.encode >> String.Concat
 
     /// create a character frequency map from the sample text
     let corpus =
-        File.ReadAllText "./data/aliceinwonderland.txt"
+        File.ReadAllBytes "./data/aliceinwonderland.txt"
         |> Comparison.buildCorpus
 
     let private possibleKeys = seq { (byte 0)..(byte 255) }
@@ -105,23 +106,56 @@ a282b2f20430a652e2c652a3124333a653e2b2027630c692b20283165286326302e27282f"
         let b = "wokka wokka!!!" |> Encoding.ASCII.GetBytes
         let expected = 37
 
-        let actual = Comparison.getHammingDistance a b
+        let actual = Comparison.getHammingDistanceStream a b
 
         Assert.Equal(expected, actual)
 
     [<Fact>]
-    let Challenge06BreakRepeatingKeyXOR() =
-        let input =
-            File.ReadAllText "./data/set01/6.txt"
-            |> Base64.decode
-            |> Seq.toArray
-        let keyLength = Comparison.findRepeatingXorKeyLength input
-        let key =
-            Comparison.findBestRepeatingXorKey
-                <| corpus
-                <| keyLength
-                <| input
-            |> Encoding.ASCII.GetString
-        
-        printfn "key: %s" key
-        ()
+    let Challenge06VerticalSlices() =
+        let input = [| 0; 1; 2; 3; 4; 5; 6; 7; 8; 9 |]
+        let rowLength = 4
+        let expected = [|
+            [| 0; 4; 8 |]
+            [| 1; 5; 9 |]
+            [| 2; 6 |]
+            [| 3; 7 |]
+        |]
+
+        let actual = Comparison.getVerticalSlices input rowLength
+
+        Assert.Equal(expected.Length, actual.Length)
+        for expected, actual in (Seq.zip expected actual) do
+            Assert.Equal<int>(expected, actual)
+
+    let GetChunkValues =
+        seq {
+            yield (0, 4, [| 0; 1; 2; 3 |])
+            yield (1, 4, [| 4; 5; 6; 7 |])
+            yield (2, 4, [| 8; 9 |])
+        }
+        |> Seq.map FSharpValue.GetTupleFields
+
+    [<Theory; MemberData("GetChunkValues")>]
+    let Challenge06GetChunk(num, size, expected) =
+        let input = [| 0; 1; 2; 3; 4; 5; 6; 7; 8; 9 |]
+
+        let actual = Comparison.getChunk num size input |> Seq.toArray
+
+        Assert.Equal<int>(expected, actual)
+
+    // [<Fact>]
+    // let Challenge06BreakRepeatingKeyXOR() =
+    //     let input =
+    //         File.ReadAllText "./data/set01/6.txt"
+    //         |> Base64.decode
+    //         |> Seq.toArray
+    //     let keyLength = Comparison.findRepeatingXorKeyLength input
+    //     // let key =
+    //     //     Comparison.findBestRepeatingXorKey
+    //     //         <| corpus
+    //     //         <| keyLength
+    //     //         <| input
+    //     //     |> Encoding.ASCII.GetString
+
+    //     // printfn "key: %s" key
+    //     ()
