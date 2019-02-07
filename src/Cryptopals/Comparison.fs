@@ -1,19 +1,20 @@
 namespace Cryptopals
 open System
+open System.Text
 
 module Comparison =
     open System.Collections.Generic
 
-    type FrequencyMap = IDictionary<char, float>
+    type FrequencyMap<'T> = IDictionary<'T, float>
 
-    let buildCorpus (text: string): FrequencyMap =
+    let buildCorpus (text: byte[]): FrequencyMap<byte> =
         let length = text.Length
         text
             |> Seq.countBy id
             |> Seq.map (fun (ch, count) -> (ch, (float count) / (float length)))
             |> dict
 
-    let scoreByCharacterFrequency (corpus: FrequencyMap) (stream: seq<char>) =
+    let scoreByCharacterFrequency (corpus: FrequencyMap<byte>) (stream: seq<byte>) =
         let getExpectedFreq c =
             if corpus.ContainsKey(c)
             then corpus.[c]
@@ -27,112 +28,94 @@ module Comparison =
             // divide total score by size of the set
             |> fun f -> f / (float totalNumChars)
 
-    let findBestXorByFrequency (corpus: FrequencyMap) (options: seq<byte>) (source: seq<byte>) =
+    let findBestXorByFrequency (corpus: FrequencyMap<byte>) (options: seq<byte>) (source: seq<byte>) =
         /// Calculates the XOR of the stream and gets the frequency score
         let xorAndScore (b: byte) =
             Ciphers.xorStreamWithSingleByte b
-            >> Seq.map char
             >> scoreByCharacterFrequency corpus
 
         options
             |> Seq.map (fun key -> (key, xorAndScore key source))
-            |> Seq.sortByDescending (fun (_, score) -> score)
-            |> Seq.head
+            |> Seq.maxBy (fun (_, score) -> score)
 
-    let getHammingDistance (stream1: seq<byte>) (stream2: seq<byte>) =
+    let getHammingDistanceByte (a: byte) (b: byte) =
         let getBit b pos =
             (b >>> pos) &&& 0b00000001uy
             |> (=) (byte 1)
         let getBits b = seq { 0..7 } |> Seq.map (getBit b)
+        // XOR produces a byte with 0 for matching bits and 1 for different bits
+        getBits (a ^^^ b)
+            // count the bits that are different
+            |> Seq.filter ((=) true)
+            |> Seq.length
 
-        Seq.zip
-            <| Seq.collect getBits stream1
-            <| Seq.collect getBits stream2
-        |> Seq.filter (fun (a, b) -> a <> b)
-        |> Seq.length
+    let getHammingDistanceStream (stream1: seq<byte>) (stream2: seq<byte>) =
+        Seq.zip stream1 stream2
+            |> Seq.sumBy (fun x -> x ||> getHammingDistanceByte)
 
     /// get the nth chunk of a certain size from the byte sequence
-    let getChunk num size (stream: byte[]) =
-        let chunkStart = num * size * 5
-        let chunkEnd = (num + 1) * size * 5
-        let chunkEnd = Math.Min(chunkEnd, stream.Length)
+    let getChunk<'T> num size (stream: 'T[]) =
+        let chunkStart = num * size
+        let chunkEnd = (num + 1) * size - 1
+        let chunkEnd = Math.Min(chunkEnd, stream.Length-1)
 
         if stream.Length < chunkStart
         then [||]
-        else stream
-            |> Seq.skip chunkStart
-            |> Seq.take (chunkEnd - chunkStart)
-            |> Seq.toArray
+        else stream.[chunkStart..chunkEnd]
 
-    let findRepeatingXorKeyLength (stream: byte[]) =
-        let totalLength = Seq.length stream
-
-        /// get the nth chunk of a certain size from the byte sequence
-        let getChunk num size (stream: byte[]) =
-            let chunkStart = num * size
-            let chunkEnd = (num + 1) * size
-            // let chunkEnd = Math.Min(chunkEnd, stream.Length)
-
-            stream.[chunkStart..chunkEnd]
-            // if stream.Length < chunkStart
-            // then [||]
-            // else stream
-            //     |> Seq.skip chunkStart
-            //     |> Seq.take (chunkEnd - chunkStart)
-            //     |> Seq.toArray
+    let findRepeatingXorKeyLengths (stream: byte[]) =
+        let totalLength = Array.length stream
 
         // 1. find the key length
-        let possibleKeyLengths = seq { 2..40 }
-        let bestKeyLength =
+        // to get a better average, we want to examine a consistent multiple of the key length
+        let maxKeyLength = 40
+        let keyLengthMultiplier = Math.Min(totalLength / maxKeyLength, 3)
+        let possibleKeyLengths = seq { 2..maxKeyLength }
+        let keyLengths =
             possibleKeyLengths
             // don't consider keys longer than the input
             |> Seq.filter (fun length -> length < totalLength)
             |> Seq.map (fun length ->
-                let chunk1 = getChunk 0 (length * 8) stream
-                let chunk2 = getChunk 1 (length * 8) stream
-                let distance = getHammingDistance chunk1 chunk2
-                (distance, length)
+                // get the hamming distance of the first two chunks
+                let chunk1 = getChunk 0 (length * keyLengthMultiplier) stream
+                let chunk2 = getChunk 1 (length * keyLengthMultiplier) stream
+                let distance = getHammingDistanceStream chunk1 chunk2
+                let normalizedDistance = float distance / float length
+                (normalizedDistance, length)
             )
-            |> Seq.sortBy (fun (distance, length) -> float distance / float length)
+            // get the 10 with the smallest hamming distance
+            |> Seq.sortBy fst
+            |> Seq.take 10
+            |> Seq.toArray
 
-        let x =
-            bestKeyLength
-            |> Seq.map (fun (distance, length) -> (distance, length, float distance / float length))
-        printfn "key lengths:"
-        for x in x do
-            printfn "%A" x
-        
-        let bestKeyLength =
-            bestKeyLength
-            |> Seq.head
-            |> fun (_, length) -> length
+        keyLengths
 
-        printfn "best key length: %d" bestKeyLength
-        bestKeyLength
+    let compareRepeatingXorKeys (corpus: FrequencyMap<byte>) (possibleKeys: seq<byte[]>) (stream: byte[]) =
+        // score each key against the corpus/stream and return the best one
+        possibleKeys
+        |> Seq.map (fun key ->
+            let score = scoreByCharacterFrequency corpus stream
+            (score, key)
+        )
+        |> Seq.maxBy fst
 
-    let findBestRepeatingXorKey (corpus: FrequencyMap) (keyLength: int) (stream: byte[]) =
-        let totalLength = Seq.length stream
+    let getVerticalSlices<'T> (stream: 'T[]) rowLength =
+        seq { 0..rowLength-1 }
+        |> Seq.map (fun col ->
+            Seq.initInfinite (fun row -> row * rowLength + col)
+            |> Seq.takeWhile (fun idx -> idx < stream.Length)
+            |> Seq.map (fun idx -> stream.[idx])
+            |> Seq.toArray
+        )
+        |> Seq.toArray
 
+    // TODO: make this take a set of key lengths or add another binding
+    let findRepeatingXorKey (corpus: FrequencyMap<byte>) (stream: byte[]) (keyLength: int) =
         // 2. find the best key
-        let numChunks = (float totalLength) / (float keyLength) |> Math.Ceiling |> int
-        let allChunks =
-            seq { 0..numChunks }
-            |> Seq.map (fun num ->
-                getChunk num keyLength (Seq.toArray stream)
-            )
-            // Seq.map
-            //     <| fun num -> getChunk num bestKeyLength stream |> Seq.toArray
-            //     <| seq { 0..numChunks }
+        /// collection of n slices, each with the nth byte of each chunk
+        let verticalSlices = getVerticalSlices stream keyLength
 
-        // create a collection of chunks of the nth byte of each chunk
-        let verticalSlices =
-            seq { 0..numChunks }
-            |> Seq.map (fun num ->
-                allChunks
-                |> Seq.filter (fun chunk -> num < chunk.Length)
-                |> Seq.map (fun chunk -> chunk.[num])
-                |> Seq.toArray
-            )
+        // printfn "num vertical slices: %3d" verticalSlices.Length
 
         let bestKey =
             verticalSlices
@@ -145,4 +128,5 @@ module Comparison =
             )
             |> Seq.toArray
 
+        // printfn "----------------\nkeylength: %3d\n%s" keyLength (Encoding.ASCII.GetString bestKey)
         bestKey
