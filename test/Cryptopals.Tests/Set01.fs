@@ -121,7 +121,7 @@ a282b2f20430a652e2c652a3124333a653e2b2027630c692b20283165286326302e27282f"
             [| 3; 7 |]
         |]
 
-        let actual = Comparison.getVerticalSlices input rowLength
+        let actual = Comparison.getVerticalSlices input rowLength |> Seq.toArray
 
         Assert.Equal(expected.Length, actual.Length)
         for expected, actual in (Seq.zip expected actual) do
@@ -143,19 +143,22 @@ a282b2f20430a652e2c652a3124333a653e2b2027630c692b20283165286326302e27282f"
 
         Assert.Equal<int>(expected, actual)
 
-    // [<Fact>]
-    // let Challenge06BreakRepeatingKeyXOR() =
-    //     let input =
-    //         File.ReadAllText "./data/set01/6.txt"
-    //         |> Base64.decode
-    //         |> Seq.toArray
-    //     let keyLength = Comparison.findRepeatingXorKeyLength input
-    //     // let key =
-    //     //     Comparison.findBestRepeatingXorKey
-    //     //         <| corpus
-    //     //         <| keyLength
-    //     //         <| input
-    //     //     |> Encoding.ASCII.GetString
+    [<Fact>]
+    let Challenge06BreakRepeatingKeyXOR() =
+        let input =
+            File.ReadAllText "./data/set01/6.txt"
+            |> Base64.decode
+            |> Seq.toArray
+        let expectedKey = "Terminator X: Bring the noise"
 
-    //     // printfn "key: %s" key
-    //     ()
+        let keyLengths = Comparison.findLikelyRepeatingXorKeyLengths input
+
+        let actualKey =
+            Comparison.findRepeatingXorKey
+                <| corpus
+                <| input
+                <| keyLengths
+            |> Seq.toArray
+            |> Encoding.ASCII.GetString
+
+        Assert.Equal(expectedKey, actualKey)

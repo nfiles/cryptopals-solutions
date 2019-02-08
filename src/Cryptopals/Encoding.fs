@@ -4,7 +4,7 @@
     2. decode
     Base 64
     1. encode
-    2. decode 
+    2. decode
 *)
 
 namespace Cryptopals
@@ -55,16 +55,18 @@ module Hex =
         bytes |> Seq.collect encodeByte
 
 module Base64 =
-    let HASH = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
-    let LOOKUP =
-        HASH
-            |> Seq.mapi (fun i c -> (c, byte i))
-            |> dict
+    open System
+
+    let private hash = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+    let private lookup =
+        hash
+        |> Seq.mapi (fun i c -> (c, byte i))
+        |> dict
 
     let private padSequenceRight pad length source =
         [source; Seq.initInfinite (fun i -> pad)]
-            |> Seq.concat
-            |> Seq.take length
+        |> Seq.concat
+        |> Seq.take length
 
     let encode bytes =
         let encodeChunk bytes =
@@ -80,15 +82,15 @@ module Base64 =
                 |]
             | _ -> failwith "Must have between one and three bytes"
             |> Seq.take (Array.length bytes + 1)
-            |> Seq.map (fun i -> HASH.[int i])
+            |> Seq.map (fun i -> hash.[int i])
             |> padSequenceRight '=' 4
 
         bytes
-            |> Seq.chunkBySize 3
-            |> Seq.collect encodeChunk
+        |> Seq.chunkBySize 3
+        |> Seq.collect encodeChunk
 
     let decode (chars: seq<char>) =
-        let getByteOrDefault c = if LOOKUP.ContainsKey c then LOOKUP.[c] else 0b0uy
+        let getByteOrDefault c = if lookup.ContainsKey c then lookup.[c] else 0b0uy
         let padChunk = padSequenceRight '=' 4 >> Seq.map getByteOrDefault >> Seq.toArray
 
         let decodeChunk chars =
@@ -103,5 +105,7 @@ module Base64 =
             |> Seq.take (Array.length chars * 6 / 8)
 
         chars
-            |> Seq.chunkBySize 4
-            |> Seq.collect decodeChunk
+        // exclude whitespace characters
+        |> Seq.filter (Char.IsWhiteSpace >> not)
+        |> Seq.chunkBySize 4
+        |> Seq.collect decodeChunk
