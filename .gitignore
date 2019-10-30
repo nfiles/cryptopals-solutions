@@ -1,3 +1,6 @@
 bin
 obj
 *.lock.json
+
+.ionide
+.vs
