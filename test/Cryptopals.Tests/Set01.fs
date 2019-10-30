@@ -162,3 +162,15 @@ a282b2f20430a652e2c652a3124333a653e2b2027630c692b20283165286326302e27282f"
             |> Encoding.ASCII.GetString
 
         Assert.Equal(expectedKey, actualKey)
+
+    [<Fact>]
+    let Challenge07EcbDecrypt() =
+        let input =
+            File.ReadAllText "./data/set01/7.txt"
+            |> Base64.decode
+            |> Seq.toArray
+        let key = Encoding.ASCII.GetBytes "YELLOW SUBMARINE"
+
+        let actual = Ciphers.decryptECB input key
+
+        Assert.StartsWith("I'm back and I'm ringin' the bell", actual)
