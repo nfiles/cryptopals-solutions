@@ -52,3 +52,16 @@ module Ciphers =
         msEncrypt.Flush()
 
         msEncrypt.ToArray()
+
+    let padBlockPKCS7 (blockSize: int) (input: byte[]) =
+        let paddingSize =
+            match input.Length % blockSize with
+            | 0 -> 0
+            | n -> blockSize - n
+
+        let totalSize = paddingSize + input.Length
+        let padding = Seq.initInfinite (fun _ -> byte paddingSize)
+
+        Seq.append input padding
+        |> Seq.take totalSize
+        |> Seq.toArray
