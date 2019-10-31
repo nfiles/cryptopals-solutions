@@ -121,3 +121,13 @@ module Comparison =
         )
         |> Seq.maxBy fst
         |> snd
+
+    let hasRepeatedBlock size input =
+        let mutable found = new Set<string> [||]
+        Seq.chunkBySize size input
+        |> Seq.map Encoding.ASCII.GetString
+        |> Seq.exists (fun block ->
+            if found.Contains block
+            then true
+            else found <- found.Add block; false
+        )
