@@ -170,7 +170,21 @@ a282b2f20430a652e2c652a3124333a653e2b2027630c692b20283165286326302e27282f"
             |> Base64.decode
             |> Seq.toArray
         let key = Encoding.ASCII.GetBytes "YELLOW SUBMARINE"
+        let expected = "I'm back and I'm ringin' the bell"
 
         let actual = Ciphers.decryptECB input key
 
-        Assert.StartsWith("I'm back and I'm ringin' the bell", actual)
+        Assert.StartsWith(expected, actual)
+
+    [<Fact>]
+    let Challenge08EcbDetect() =
+        let input =
+            File.ReadAllLines "./data/set01/8.txt"
+            |> Seq.map Hex.decode
+            |> Seq.toArray
+        let expected = 132
+
+        // find the first row with a repeated block
+        let actual = Seq.findIndex (Comparison.hasRepeatedBlock 16) input
+
+        Assert.Equal(expected, actual)

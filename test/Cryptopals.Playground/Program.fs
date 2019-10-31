@@ -1,6 +1,6 @@
 ﻿open System.IO
-open Cryptopals
 open System.Text
+open Cryptopals
 
 [<EntryPoint>]
 let main argv =
