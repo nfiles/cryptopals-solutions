@@ -1,12 +1,10 @@
 namespace Cryptopals.Tests
 
 open System
-open System.Collections.Generic
 open System.IO
 open System.Text
 open Cryptopals
 open Xunit
-open Xunit.Abstractions
 open FSharp.Reflection
 
 module Set01Tests =
@@ -49,14 +47,14 @@ module Set01Tests =
 
         let actualKey = Comparison.findBestXorByFrequency corpus possibleKeys input |> fst
 
-        let cleartext =
+        let plaintext =
             Ciphers.xorStreamWithSingleByte
                 <| actualKey
                 <| input
             |> Seq.map char
             |> String.Concat
 
-        Assert.Equal(expected, cleartext)
+        Assert.Equal(expected, plaintext)
 
     [<Fact>]
     let Challenge04DetectSingleCharacterXOR() =
@@ -172,9 +170,25 @@ a282b2f20430a652e2c652a3124333a653e2b2027630c692b20283165286326302e27282f"
         let key = Encoding.ASCII.GetBytes "YELLOW SUBMARINE"
         let expected = "I'm back and I'm ringin' the bell"
 
-        let actual = Ciphers.decryptECB input key
+        let actual = Ciphers.decryptECB key input |> Encoding.ASCII.GetString
 
         Assert.StartsWith(expected, actual)
+
+    [<Fact>]
+    let Challenge07EcbBothWays() =
+        let key = Encoding.ASCII.GetBytes "YELLOW SUBMARINE"
+        let original = "This is some sample text for encryption. Good luck."
+
+        let actual =
+            original
+            |> Encoding.ASCII.GetBytes
+            |> Ciphers.padBlockPKCS7 key.Length
+            |> Ciphers.encryptECB key
+            |> Ciphers.decryptECB key
+            |> Ciphers.unpadBlockPKCS7
+            |> Encoding.ASCII.GetString
+
+        Assert.Equal(original, actual)
 
     [<Fact>]
     let Challenge08EcbDetect() =

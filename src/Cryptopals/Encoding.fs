@@ -64,7 +64,7 @@ module Base64 =
         |> dict
 
     let private padSequenceRight pad length source =
-        [source; Seq.initInfinite (fun i -> pad)]
+        [source; Seq.initInfinite (fun _ -> pad)]
         |> Seq.concat
         |> Seq.take length
 
