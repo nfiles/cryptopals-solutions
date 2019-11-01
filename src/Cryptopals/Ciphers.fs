@@ -22,18 +22,6 @@ module Ciphers =
 
         crypto
 
-    let decryptECB (key: byte[]) (ciphertext: byte[]) =
-        use crypto = createEcb key
-
-        use decryptor = crypto.CreateDecryptor()
-        use msDecrypt = new MemoryStream(ciphertext)
-        use csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read)
-        use msOutput  = new MemoryStream()
-
-        csDecrypt.CopyTo(msOutput)
-
-        msOutput.ToArray()
-
     let encryptECB (key: byte[]) (plaintext: byte[]) =
         use crypto = createEcb key
 
@@ -46,6 +34,18 @@ module Ciphers =
         csEncrypt.FlushFinalBlock()
 
         msEncrypt.ToArray()
+
+    let decryptECB (key: byte[]) (ciphertext: byte[]) =
+        use crypto = createEcb key
+
+        use decryptor = crypto.CreateDecryptor()
+        use msDecrypt = new MemoryStream(ciphertext)
+        use csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read)
+        use msOutput  = new MemoryStream()
+
+        csDecrypt.CopyTo(msOutput)
+
+        msOutput.ToArray()
 
     let padBlockPKCS7 (blockSize: int) (input: byte[]) =
         if blockSize >= 256 then
