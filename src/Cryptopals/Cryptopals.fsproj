@@ -7,7 +7,7 @@
   <ItemGroup>
     <Compile Include="Encoding.fs" />
     <Compile Include="Ciphers.fs" />
-    <Compile Include="Comparison.fs" />
+    <Compile Include="Analysis.fs" />
   </ItemGroup>
 
 </Project>
