@@ -7,7 +7,7 @@ My solutions to the Matasano cryptopals problems: http://cryptopals.com/
 - [ ] Set 2 - Block crypto
   - [x] 9 - Implement PKCS#7 padding
   - [x] 10 - Implement CBC mode
-  - [ ] 11 - An ECB/CBC detection oracle
+  - [x] 11 - An ECB/CBC detection oracle
   - [ ] 12 - Byte-at-a-time ECB decryption (Simple)
   - [ ] 13 - ECB cut-and-paste
   - [ ] 14 - Byte-at-a-time ECB decryption (Harder)

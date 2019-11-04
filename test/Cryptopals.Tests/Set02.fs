@@ -86,3 +86,51 @@ module Set02Tests =
             |> Encoding.ASCII.GetString
 
         Assert.StartsWith(expected, actual)
+
+    [<Fact>]
+    let Challenge11RandomRange() =
+        let min = 50
+        let max = 100
+        let tries = 1000
+
+        let plot =
+            seq { 0 .. tries }
+            |> Seq.map (fun _ -> Utilities.randomRange min max)
+            |> Seq.distinct
+            |> Seq.sort
+            |> Seq.toArray
+
+        Assert.Equal(min, plot.[0])
+        Assert.Equal(max - 1, plot.[plot.Length - 1])
+        Assert.Equal(max - min, plot.Length)
+
+    [<Fact>]
+    let Challenge11RandomBytesShouldBeUnique() =
+        let length = 10
+        let tries = 100
+
+        let results =
+            seq { 1 .. tries }
+            |> Seq.map (fun _ ->
+                Utilities.randomBytes length
+                |> Hex.encode
+                |> String.Concat)
+            |> Seq.distinct
+            |> Seq.toArray
+
+        Assert.Equal(tries, results.Length)
+
+    [<Fact>]
+    let Challenge11DetermineEcbOrCbc() =
+        let key = Utilities.randomBytes 16
+        // we know the key is 16 bytes, so the input should be long enough to have
+        // at least two identical blocks regardless of the padding added in the oracle
+        let plaintext = Array.create (key.Length * 4) (byte 69)
+
+        let oracle = Analysis.ECBCBCOracle key
+        for i = 1 to 10000 do
+            let (ciphertext, expectedCbcMode) = oracle plaintext
+
+            let actualCbcMode = Analysis.detectRepeatedBlock key.Length ciphertext
+
+            Assert.Equal(expectedCbcMode, actualCbcMode)

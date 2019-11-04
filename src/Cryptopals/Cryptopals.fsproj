@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <Compile Include="Encoding.fs" />
+    <Compile Include="Utilities.fs" />
     <Compile Include="Ciphers.fs" />
     <Compile Include="Analysis.fs" />
   </ItemGroup>

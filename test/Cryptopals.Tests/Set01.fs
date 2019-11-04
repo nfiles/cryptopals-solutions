@@ -13,7 +13,7 @@ module Set01Tests =
     /// create a character frequency map from the sample text
     let corpus =
         File.ReadAllBytes "./data/aliceinwonderland.txt"
-        |> Comparison.buildCorpus
+        |> Analysis.buildCorpus
 
     let private possibleKeys = seq { (byte 0)..(byte 255) }
 
@@ -45,7 +45,7 @@ module Set01Tests =
         let input = Hex.decode "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736"
         let expected = "Cooking MC's like a pound of bacon"
 
-        let actualKey = Comparison.findBestXorByFrequency corpus possibleKeys input |> fst
+        let actualKey = Analysis.findBestXorByFrequency corpus possibleKeys input |> fst
 
         let plaintext =
             Ciphers.xorStreamWithSingleByte
@@ -68,7 +68,7 @@ module Set01Tests =
         let _, actual =
             input
             |> Seq.map (fun raw ->
-                let key, score = Comparison.findBestXorByFrequency corpus possibleKeys raw
+                let key, score = Analysis.findBestXorByFrequency corpus possibleKeys raw
                 let clear =
                     Ciphers.xorStreamWithSingleByte key raw
                     |> Seq.map char
@@ -104,7 +104,7 @@ a282b2f20430a652e2c652a3124333a653e2b2027630c692b20283165286326302e27282f"
         let b = "wokka wokka!!!" |> Encoding.ASCII.GetBytes
         let expected = 37
 
-        let actual = Comparison.getHammingDistanceStream a b
+        let actual = Analysis.getHammingDistanceStream a b
 
         Assert.Equal(expected, actual)
 
@@ -119,7 +119,7 @@ a282b2f20430a652e2c652a3124333a653e2b2027630c692b20283165286326302e27282f"
             [| 3; 7 |]
         |]
 
-        let actual = Comparison.getVerticalSlices input rowLength |> Seq.toArray
+        let actual = Analysis.getVerticalSlices input rowLength |> Seq.toArray
 
         Assert.Equal(expected.Length, actual.Length)
         for expected, actual in (Seq.zip expected actual) do
@@ -137,7 +137,7 @@ a282b2f20430a652e2c652a3124333a653e2b2027630c692b20283165286326302e27282f"
     let Challenge06GetChunk(num, size, expected) =
         let input = [| 0; 1; 2; 3; 4; 5; 6; 7; 8; 9 |]
 
-        let actual = Comparison.getChunk num size input |> Seq.toArray
+        let actual = Analysis.getChunk num size input |> Seq.toArray
 
         Assert.Equal<int>(expected, actual)
 
@@ -149,10 +149,10 @@ a282b2f20430a652e2c652a3124333a653e2b2027630c692b20283165286326302e27282f"
             |> Seq.toArray
         let expectedKey = "Terminator X: Bring the noise"
 
-        let keyLengths = Comparison.findLikelyRepeatingXorKeyLengths input
+        let keyLengths = Analysis.findLikelyRepeatingXorKeyLengths input
 
         let actualKey =
-            Comparison.findRepeatingXorKey
+            Analysis.findRepeatingXorKey
                 <| corpus
                 <| input
                 <| keyLengths
@@ -199,6 +199,6 @@ a282b2f20430a652e2c652a3124333a653e2b2027630c692b20283165286326302e27282f"
         let expected = 132
 
         // find the first row with a repeated block
-        let actual = Seq.findIndex (Comparison.hasRepeatedBlock 16) input
+        let actual = Seq.findIndex (Analysis.detectRepeatedBlock 16) input
 
         Assert.Equal(expected, actual)

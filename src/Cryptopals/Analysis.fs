@@ -1,8 +1,9 @@
 namespace Cryptopals
+
 open System
 open System.Text
 
-module Comparison =
+module Analysis =
     open System.Collections.Generic
 
     /// Expected frequencies of elements
@@ -42,8 +43,8 @@ module Comparison =
             >> scoreByCharacterFrequency corpus
 
         options
-            |> Seq.map (fun key -> (key, xorAndScore key source))
-            |> Seq.maxBy snd
+        |> Seq.map (fun key -> (key, xorAndScore key source))
+        |> Seq.maxBy snd
 
     /// get the hamming distance between two bytes
     let getHammingDistanceByte a b =
@@ -122,12 +123,38 @@ module Comparison =
         |> Seq.maxBy fst
         |> snd
 
-    let hasRepeatedBlock size input =
+    let detectRepeatedBlock size input =
         let mutable found = new Set<string> [||]
         Seq.chunkBySize size input
         |> Seq.map Encoding.ASCII.GetString
         |> Seq.exists (fun block ->
-            if found.Contains block
-            then true
-            else found <- found.Add block; false
+            if found.Contains block then
+                true
+            else
+                found <- found.Add block
+                false
         )
+
+    let ECBCBCOracle key payload =
+        let prefixLength = Utilities.randomRange 5 11
+        let suffixLength = Utilities.randomRange 5 11
+
+        let msg =
+            seq {
+                yield! Utilities.randomBytes prefixLength
+                yield! payload
+                yield! Utilities.randomBytes suffixLength
+            }
+            |> Seq.toArray
+            |> Ciphers.padBlockPKCS7 (Array.length key)
+
+        let isECB = Utilities.randomRange 0 2 = 0
+
+        let encrypted =
+            if isECB then
+                Ciphers.encryptECB key msg
+            else
+                let iv = Utilities.randomBytes key.Length
+                Ciphers.encryptCBC key iv payload
+
+        (encrypted, isECB)
