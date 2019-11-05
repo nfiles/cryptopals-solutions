@@ -125,12 +125,30 @@ module Set02Tests =
         let key = Utilities.randomBytes 16
         // we know the key is 16 bytes, so the input should be long enough to have
         // at least two identical blocks regardless of the padding added in the oracle
-        let plaintext = Array.create (key.Length * 4) (byte 69)
+        let plaintext = Array.create (key.Length * 4) 69uy
 
-        let oracle = Analysis.ECBCBCOracle key
+        let oracle = Analysis.ecbCBCOracle key
         for i = 1 to 10000 do
             let (ciphertext, expectedCbcMode) = oracle plaintext
 
             let actualCbcMode = Analysis.detectRepeatedBlock key.Length ciphertext
 
             Assert.Equal(expectedCbcMode, actualCbcMode)
+
+    [<Fact>]
+    let Challenge12ByteAtATimeECBDecryption() =
+        let suffix =
+            """
+            Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIGRvd24gc28gbXkg
+            aGFpciBjYW4gYmxvdwpUaGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBq
+            dXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUg
+            YnkK
+            """
+            |> Base64.decode
+            |> Seq.toArray
+
+        let key = Utilities.randomBytes 16
+        let oracle = Analysis.ecbSuffixOracle suffix key
+        let actualSuffix = Analysis.recoverEcbSuffix oracle
+
+        Assert.Equal<byte>(suffix, actualSuffix)

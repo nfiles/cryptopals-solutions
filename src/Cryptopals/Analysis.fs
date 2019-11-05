@@ -135,7 +135,7 @@ module Analysis =
                 false
         )
 
-    let ECBCBCOracle key payload =
+    let ecbCBCOracle key payload =
         let prefixLength = Utilities.randomRange 5 11
         let suffixLength = Utilities.randomRange 5 11
 
@@ -158,3 +158,78 @@ module Analysis =
                 Ciphers.encryptCBC key iv payload
 
         (encrypted, isECB)
+
+    let ecbSuffixOracle secretSuffix key payload =
+        Array.append payload secretSuffix
+        |> Ciphers.padBlockPKCS7 (Array.length key)
+        |> Ciphers.encryptECB key
+
+    let recoverEcbSuffix (oracle: byte[] -> byte[]) =
+        // find the first block size that repeats in the first two chunks
+        let blockSize =
+            seq { 2 .. 100 }
+            |> Seq.find (fun bs ->
+                Array.create (bs * 2) 69uy
+                |> oracle
+                |> Seq.take (bs * 2)
+                |> detectRepeatedBlock bs)
+
+        let getBlock offset size input =
+            Array.sub input offset size
+            |> Hex.encode
+            |> Seq.toArray
+            |> String
+
+        /// Create a dictionary of all results from calling the oracle with an input of
+        /// [ padding * (known.Length % blockSize - 1), known, X ], where X is every possible byte from 0-255
+        let findAllByteOptions blockOffset blockSize known =
+            let padLength = blockSize - (Array.length known % blockSize) - 1
+            let padding = Array.zeroCreate padLength
+            let msg =
+                [| yield! padding
+                   yield! known
+                   yield 0uy |]
+
+            let allOptions =
+                seq {
+                    for b = 0uy to 255uy do
+                        msg.[msg.Length - 1] <- b
+                        let block = oracle msg |> getBlock blockOffset blockSize
+
+                        yield (block, b)
+                }
+                |> dict
+
+            (padding, allOptions)
+
+        /// length of the secret suffix in the oracle
+        let secretLength =
+            let totalLength = oracle Array.empty |> Array.length
+
+            /// number of bytes of padding
+            let diff =
+                Seq.find
+                    <| fun n ->
+                        let padding = Array.zeroCreate n
+                        let length = oracle padding |> Array.length
+                        length > totalLength
+                    <| seq { 1 .. blockSize }
+
+            totalLength - diff
+
+        let plaintext =
+            Array.fold
+                <| (fun (known: byte[]) i ->
+                    let blockOffset = i / blockSize * blockSize
+                    let (padding, options) = findAllByteOptions blockOffset blockSize known
+
+                    let lastBlock = oracle padding |> getBlock blockOffset blockSize
+
+                    let knownByte = options.Item lastBlock
+
+                    [| yield! known
+                       yield knownByte |])
+                <| Array.empty
+                <| [| 0 .. (secretLength - 1) |]
+
+        plaintext
